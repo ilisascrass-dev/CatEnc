@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🐱 CatEnc</title>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+  :root {
+    --md-primary: #D0BCFF; --md-on-primary: #381E72;
+    --md-primary-container: #4F378B; --md-on-primary-container: #EADDFF;
+    --md-secondary: #CCC2DC; --md-tertiary: #EFB8C8; --md-error: #F2B8B5;
+    --md-background: #141218; --md-on-background: #E6E0E9;
+    --md-surface-container-lowest: #0F0D13; --md-surface-container-low: #1D1B20;
+    --md-surface-container: #211F26; --md-surface-container-high: #2B2930;
+    --md-surface-container-highest: #36343B;
+    --md-on-surface-variant: #CAC4D0; --md-outline-variant: #49454F;
+    --radius-md: 16px; --radius-lg: 24px; --radius-xl: 28px; --radius-full: 999px;
+    --elev-1: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    --elev-3: 0 8px 24px rgba(0,0,0,0.35), 0 4px 8px rgba(0,0,0,0.25);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Roboto', 'Google Sans', system-ui, sans-serif;
+    background: var(--md-background); color: var(--md-on-background);
+    min-height: 100vh; padding: 16px 16px 100px 16px;
+    display: flex; justify-content: center; align-items: flex-start;
+  }
+  
+  .screen { display: none; width: 100%; max-width: 760px; animation: fadeIn 0.3s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .container {
+    background: var(--md-surface-container-low);
+    border-radius: var(--radius-xl); padding: 24px 20px 28px;
+    width: 100%; box-shadow: var(--elev-1);
+  }
+  
+  .app-title {
+    font-size: 28px; font-weight: 600; text-align: center; margin-bottom: 20px;
+    background: linear-gradient(90deg, var(--md-primary), var(--md-tertiary));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  label { display: block; margin: 18px 4px 8px; font-size: 13px; font-weight: 500; color: var(--md-on-surface-variant); }
+  select, textarea, input {
+    width: 100%; padding: 16px; border-radius: var(--radius-md);
+    border: 1px solid var(--md-outline-variant); background: var(--md-surface-container-high);
+    color: var(--md-on-background); font-size: 15px; font-family: inherit; outline: none;
+  }
+  textarea { resize: vertical; min-height: 96px; }
+  input:focus, textarea:focus, select:focus { border-color: var(--md-primary); box-shadow: 0 0 0 1px var(--md-primary); }
+  .buttons { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  button {
+    flex: 1; padding: 16px 20px; border: none; border-radius: var(--radius-full);
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s; font-family: inherit;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-main { background: var(--md-primary); color: var(--md-on-primary); box-shadow: var(--elev-1); }
+  .btn-tonal { background: var(--md-surface-container-highest); color: var(--md-on-background); }
+  .hidden { display: none !important; }
+  .keygen { display: flex; gap: 8px; }
+  .keygen input { flex: 1; }
+  .keygen button { flex: 0 0 auto; padding: 12px; min-height: 44px; border-radius: var(--radius-md); }
+
+  #gate { position: fixed; inset: 0; z-index: 1000; background: var(--md-background); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .gate-card { background: var(--md-surface-container); border-radius: var(--radius-xl); padding: 32px 24px; max-width: 420px; width: 100%; box-shadow: var(--elev-3); text-align: center; }
+  .gate-card h2 { font-size: 24px; margin-bottom: 8px; color: var(--md-primary); }
+  .gate-card p { color: var(--md-on-surface-variant); font-size: 14px; margin-bottom: 24px; }
+  .gate-msg { margin-top: 16px; font-size: 13px; color: var(--md-error); min-height: 18px; }
+
+  #qrModal { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; padding: 20px; }
+  #qrModal.active { display: flex; }
+  .qr-box { background: var(--md-surface-container); padding: 20px; border-radius: var(--radius-xl); width: 100%; max-width: 400px; text-align: center; }
+  #reader { width: 100%; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 16px; background: #000; }
+  
+  .profile-card { text-align: center; margin-bottom: 24px; }
+  .avatar {
+    width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 16px;
+    background: linear-gradient(135deg, var(--md-primary), var(--md-tertiary));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; box-shadow: var(--elev-3);
+  }
+  .profile-field { text-align: left; background: var(--md-surface-container); padding: 16px; border-radius: var(--radius-md); margin-bottom: 12px; border: 1px solid var(--md-outline-variant); }
+  .profile-field .lbl { font-size: 12px; color: var(--md-on-surface-variant); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .profile-field .val { font-size: 16px; font-family: monospace; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+  .profile-field input.val { background: transparent; border: none; padding: 0; font-family: inherit; font-weight: 600; color: var(--md-on-background); width: 100%; }
+  .profile-field .edit-btn { background: none; border: none; color: var(--md-primary); cursor: pointer; padding: 4px; font-size: 18px; flex: 0 0 auto; }
+  
+  .status-badge { font-size: 12px; padding: 2px 8px; border-radius: 8px; font-weight: 600; font-family: sans-serif; }
+  .status-ok { background: rgba(239,184,200,0.15); color: var(--md-tertiary); }
+  .status-exp { background: rgba(242,184,181,0.15); color: var(--md-error); }
+
+  .bottom-nav {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 32px); max-width: 500px; height: 72px;
+    background: var(--md-surface-container-high);
+    border-radius: var(--radius-xl);
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 10px; box-shadow: var(--elev-3); z-index: 900;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; cursor: pointer; color: var(--md-on-surface-variant); transition: color 0.2s;
+  }
+  .nav-item.active { color: var(--md-on-background); }
+  .nav-icon {
+    width: 64px; height: 32px; border-radius: var(--radius-full);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; transition: background 0.3s;
+  }
+  .nav-item.active .nav-icon { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+  .nav-label { font-size: 11px; font-weight: 500; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- GATE (Ввод ключа) -->
+<div id="gate">
+  <div class="gate-card">
+    <h2>🐱 CatEnc</h2>
+    <p data-i18n="gateMsg">Введите ключ доступа</p>
+    <input type="text" id="accessKey" placeholder="CAT-XXXX-XXXX-XXXX-XXXX" style="text-align:center; letter-spacing:1px; font-family: monospace; font-size: 16px; margin-bottom: 12px;">
+    
+    <div class="buttons" style="margin-top:0; gap: 8px;">
+      <button class="btn-main" onclick="checkKey()" data-i18n="btnLogin">🔓 Войти</button>
+      <button class="btn-tonal" onclick="openQR()" style="flex: 0 0 52px; padding: 0; font-size: 20px;" title="Сканировать QR">📷</button>
+    </div>
+    
+    <div class="gate-msg" id="gateMsg"></div>
+  </div>
+</div>
+
+<!-- Модалка QR -->
+<div id="qrModal">
+  <div class="qr-box">
+    <h3 style="margin-bottom: 16px; color: var(--md-primary);">📷 Сканировать QR</h3>
+    <div id="reader"></div>
+    <button class="btn-tonal" onclick="closeQR()" style="width: 100%;">Отмена</button>
+  </div>
+</div>
+
+<!-- ЭКРАН 1: ГЛАВНАЯ -->
+<div id="screen-home" class="screen active">
+  <div class="container">
+    <div class="app-title" data-i18n="homeTitle">🐱 Шифрование</div>
+    <label for="cipher" data-i18n="lblMethod">Метод</label>
+    <select id="cipher" onchange="updateUI()">
+      <optgroup label="🔐 Шифрование" data-i18n="ogSecure">
+        <option value="aes" data-i18n="optAes">AES-256-GCM</option>
+        <option value="chacha" data-i18n="optChacha">ChaCha20-Poly1305</option>
+        <option value="e2ee" data-i18n="optE2ee">E2EE</option>
+      </optgroup>
+      <optgroup label="📦 Кодирование" data-i18n="ogEncode">
+        <option value="base64" data-i18n="optB64">Base64</option>
+        <option value="hex" data-i18n="optHex">Hex</option>
+      </optgroup>
+    </select>
+    <div id="passwordBlock">
+      <label for="key" data-i18n="lblPassword">Пароль</label>
+      <input type="password" id="key" placeholder="Введите пароль..." data-i18n-ph="phPassword">
+    </div>
+    <div id="e2eeBlock" class="hidden">
+      <label data-i18n="lblKeypair">Ваша пара ключей</label>
+      <div class="keygen"><input type="text" id="myPub" readonly placeholder="Публичный" data-i18n-ph="phPub"><button class="btn-tonal" onclick="copyField('myPub')">📋</button></div>
+      <div class="keygen"><input type="text" id="myPriv" readonly placeholder="Приватный" data-i18n-ph="phPriv"><button class="btn-tonal" onclick="copyField('myPriv')">📋</button></div>
+      <div class="buttons" style="margin-top:12px;"><button class="btn-tonal" onclick="generateKeys()" data-i18n="btnGenKeys">🔑 Сгенерировать</button></div>
+      <label for="peerPub" data-i18n="lblPeerPub">Публичный ключ получателя</label>
+      <input type="text" id="peerPub" placeholder="Вставьте публичный ключ..." data-i18n-ph="phPeerPub">
+      <label for="myPrivDecrypt" data-i18n="lblMyPriv">Ваш приватный ключ</label>
+      <input type="text" id="myPrivDecrypt" placeholder="Вставьте свой приватный ключ..." data-i18n-ph="phMyPriv">
+    </div>
+    <label for="input" data-i18n="lblInput">Входной текст</label>
+    <textarea id="input" placeholder="Введите текст..." data-i18n-ph="phInput"></textarea>
+    <div class="buttons">
+      <button class="btn-main" id="btnEncrypt" onclick="process(false)" data-i18n="btnEncrypt">🔒 Зашифровать</button>
+      <button class="btn-main" id="btnDecrypt" onclick="process(true)" data-i18n="btnDecrypt">🔓 Расшифровать</button>
+    </div>
+    <label for="output" data-i18n="lblOutput">Результат</label>
+    <textarea id="output" readonly placeholder="Результат..." data-i18n-ph="phOutput"></textarea>
+    <div class="buttons">
+      <button class="btn-tonal" onclick="copyField('output')" data-i18n="btnCopy">📋 Копировать</button>
+      <button class="btn-tonal" onclick="clearAll()" style="flex: 0.5;" data-i18n="btnClear">🗑 Очистить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ЭКРАН 2: ПРОФИЛЬ -->
+<div id="screen-profile" class="screen">
+  <div class="container">
+    <div class="app-title" data-i18n="profileTitle">👤 Профиль</div>
+    
+    <div class="profile-card">
+      <div class="avatar" id="avatarDisplay">U</div>
+    </div>
+
+    <div class="profile-field">
+      <div class="lbl" data-i18n="lblNickname">Никнейм</div>
+      <div class="val">
+        <input type="text" id="nicknameInput" value="User" maxlength="20">
+        <button class="edit-btn" onclick="saveNickname()">💾</button>
+      </div>
+    </div>
+
+    <div class="profile-field">
+      <div class="lbl" data-i18n="lblMyKey">Ваш ключ доступа</div>
+      <div class="val">
+        <span id="myKeyDisplay" style="word-break: break-all; color: var(--md-primary);">Загрузка...</span>
+        <button class="edit-btn" onclick="copyField('myKeyDisplay')">📋</button>
+      </div>
+    </div>
+
+    <div class="profile-field">
+      <div class="lbl" data-i18n="lblExpiry">Срок действия ключа</div>
+      <div class="val" style="font-family: inherit;">
+        <span id="myExpiryDisplay">Загрузка...</span>
+        <span id="myExpiryStatus" class="status-badge status-ok" data-i18n="statusActive">Активен</span>
+      </div>
+    </div>
+    
+    <div class="buttons" style="margin-top: 30px;">
+      <button class="btn-tonal" onclick="logout()" data-i18n="btnLogout">Выйти из аккаунта</button>
+    </div>
+  </div>
+</div>
+
+<!-- ЭКРАН 3: НАСТРОЙКИ -->
+<div id="screen-settings" class="screen">
+  <div class="container">
+    <div class="app-title" data-i18n="settingsTitle">⚙️ Настройки</div>
+    <label data-i18n="lblLang">Язык интерфейса</label>
+    <select id="langSelect" onchange="changeLang()">
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="zh">🇨🇳 中文</option>
+    </select>
+    <div style="margin-top: 30px; text-align: center; color: var(--md-on-surface-variant); font-size: 13px;">
+      CatEnc v2.0<br><span data-i18n="madeWith">Сделано с 💜 и мурчанием</span>
+    </div>
+  </div>
+</div>
+
+<!-- НИЖНЕЕ МЕНЮ -->
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchScreen('home', this)">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label" data-i18n="navHome">Главная</div>
+  </div>
+  <div class="nav-item" onclick="switchScreen('profile', this)">
+    <div class="nav-icon">👤</div>
+    <div class="nav-label" data-i18n="navProfile">Профиль</div>
+  </div>
+  <div class="nav-item" onclick="switchScreen('settings', this)">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label" data-i18n="navSettings">Настройки</div>
+  </div>
+</div>
+
+<!-- Firebase & Libsodium (Загружаем через отдельный файл) -->
+<script src="libsodium-wrappers.min.js"></script>
+
+<script type="module">
+  // ==========================================
+  // ЗАГРУЗКА КОНФИГА FIREBASE ИЗ ФАЙЛА CatBase.firebase
+  // ==========================================
+  
+  async function loadFirebaseConfig() {
+    try {
+      // Пытаемся прочитать файл
+      const response = await fetch('CatBase.firebase');
+      if (!response.ok) throw new Error('Файл CatBase.firebase не найден');
+      const config = await response.json();
+      return config;
+    } catch (err) {
+      console.error('Ошибка загрузки конфигурации Firebase:', err);
+      document.getElementById('gateMsg').textContent = '⚠ Ошибка: Нет файла CatBase.firebase';
+      return null;
+    }
+  }
+
+  async function initApp() {
+    const firebaseConfig = await loadFirebaseConfig();
+    if (!firebaseConfig) return;
+
+    // Импортируем Firebase SDK
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const { getFirestore, doc, getDoc, updateDoc, arrayUnion } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    window.firebaseDB = { db, doc, getDoc, updateDoc, arrayUnion };
+    window.dispatchEvent(new Event('firebase-ready'));
+  }
+
+  initApp();
+</script>
+
+<script>
+// ================= ОСТАЛЬНАЯ ЛОГИКА =================
+let sodium = null, sodiumReady = false, fb = null;
+let html5QrCode = null;
+
+let deviceId = localStorage.getItem('catenc_device_id');
+if (!deviceId) {
+  deviceId = 'dev_' + Math.random().toString(36).substring(2, 10);
+  localStorage.setItem('catenc_device_id', deviceId);
+}
+
+window.addEventListener('firebase-ready', () => { fb = window.firebaseDB; });
+
+const checkSodium = setInterval(async () => {
+  if (window.sodium && !sodiumReady) {
+    sodium = window.sodium; await sodium.ready; sodiumReady = true;
+    clearInterval(checkSodium);
+  }
+}, 100);
+
+// ================= СКАНЕР QR =================
+async function openQR() {
+  document.getElementById('qrModal').classList.add('active');
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode("reader");
+  }
+  
+  try {
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => {
+        document.getElementById('accessKey').value = decodedText.trim();
+        closeQR();
+        checkKey();
+      },
+      (errorMessage) => {}
+    );
+  } catch (err) {
+    alert("Ошибка камеры: " + err);
+    closeQR();
+  }
+}
+
+async function closeQR() {
+  document.getElementById('qrModal').classList.remove('active');
+  if (html5QrCode) {
+    try { await html5QrCode.stop(); } catch (e) {}
+  }
+}
+
+// ================= ЯЗЫКИ =================
+const translations = {
+  ru: {
+    gateMsg: "Введите ключ доступа", btnLogin: "🔓 Войти",
+    homeTitle: "🐱 Шифрование", lblMethod: "Метод", ogSecure: "🔐 Шифрование", ogEncode: "📦 Кодирование",
+    optAes: "AES-256-GCM", optChacha: "ChaCha20-Poly1305", optE2ee: "E2EE", optB64: "Base64", optHex: "Hex",
+    lblPassword: "Пароль", phPassword: "Введите пароль...",
+    lblKeypair: "Ваша пара ключей", phPub: "Публичный", phPriv: "Приватный", btnGenKeys: "🔑 Сгенерировать",
+    lblPeerPub: "Публичный ключ получателя", phPeerPub: "Вставьте публичный ключ...",
+    lblMyPriv: "Ваш приватный ключ", phMyPriv: "Вставьте свой приватный ключ...",
+    lblInput: "Входной текст", phInput: "Введите текст...",
+    btnEncrypt: "🔒 Зашифровать", btnDecrypt: "🔓 Расшифровать",
+    lblOutput: "Результат", phOutput: "Результат...", btnCopy: "📋 Копировать", btnClear: "🗑 Очистить",
+    profileTitle: "👤 Профиль", lblNickname: "Никнейм", lblMyKey: "Ваш ключ доступа", lblExpiry: "Срок действия ключа",
+    statusActive: "Активен", btnLogout: "Выйти из аккаунта",
+    settingsTitle: "⚙️ Настройки", lblLang: "Язык интерфейса", madeWith: "Сделано с 💜 и мурчанием",
+    navHome: "Главная", navProfile: "Профиль", navSettings: "Настройки"
+  },
+  en: {
+    gateMsg: "Enter access key", btnLogin: "🔓 Login",
+    homeTitle: "🐱 Encryption", lblMethod: "Method", ogSecure: "🔐 Encryption", ogEncode: "📦 Encoding",
+    optAes: "AES-256-GCM", optChacha: "ChaCha20-Poly1305", optE2ee: "E2EE", optB64: "Base64", optHex: "Hex",
+    lblPassword: "Password", phPassword: "Enter password...",
+    lblKeypair: "Your key pair", phPub: "Public", phPriv: "Private", btnGenKeys: "🔑 Generate",
+    lblPeerPub: "Recipient public key", phPeerPub: "Paste public key...",
+    lblMyPriv: "Your private key", phMyPriv: "Paste private key...",
+    lblInput: "Input text", phInput: "Enter text...",
+    btnEncrypt: "🔒 Encrypt", btnDecrypt: "🔓 Decrypt",
+    lblOutput: "Result", phOutput: "Result...", btnCopy: "📋 Copy", btnClear: "🗑 Clear",
+    profileTitle: "👤 Profile", lblNickname: "Nickname", lblMyKey: "Your access key", lblExpiry: "Key expiration",
+    statusActive: "Active", btnLogout: "Logout",
+    settingsTitle: "⚙️ Settings", lblLang: "Language", madeWith: "Made with 💜 and purrs",
+    navHome: "Home", navProfile: "Profile", navSettings: "Settings"
+  },
+  zh: {
+    gateMsg: "请输入访问密钥", btnLogin: "🔓 登录",
+    homeTitle: "🐱 加密", lblMethod: "方法", ogSecure: "🔐 加密", ogEncode: "📦 编码",
+    optAes: "AES-256-GCM", optChacha: "ChaCha20-Poly1305", optE2ee: "E2EE", optB64: "Base64", optHex: "十六进制",
+    lblPassword: "密码", phPassword: "请输入密码...",
+    lblKeypair: "您的密钥对", phPub: "公钥", phPriv: "私钥", btnGenKeys: "🔑 生成",
+    lblPeerPub: "接收方公钥", phPeerPub: "粘贴公钥...",
+    lblMyPriv: "您的私钥", phMyPriv: "粘贴私钥...",
+    lblInput: "输入文本", phInput: "请输入文本...",
+    btnEncrypt: "🔒 加密", btnDecrypt: "🔓 解密",
+    lblOutput: "结果", phOutput: "结果...", btnCopy: "📋 复制", btnClear: "🗑 清除",
+    profileTitle: "👤 个人资料", lblNickname: "昵称", lblMyKey: "您的访问密钥", lblExpiry: "密钥有效期",
+    statusActive: "有效", btnLogout: "退出登录",
+    settingsTitle: "⚙️ 设置", lblLang: "界面语言", madeWith: "用 💜 和喵喵声制作",
+    navHome: "主页", navProfile: "个人资料", navSettings: "设置"
+  }
+};
+
+let currentLang = localStorage.getItem('catenc_lang') || 'ru';
+
+function applyLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('catenc_lang', lang);
+  const t = translations[lang];
+  
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key]) el.textContent = t[key];
+  });
+  
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const key = el.getAttribute('data-i18n-ph');
+    if (t[key]) el.placeholder = t[key];
+  });
+
+  document.querySelector('optgroup[data-i18n="ogSecure"]').label = t.ogSecure;
+  document.querySelector('optgroup[data-i18n="ogEncode"]').label = t.ogEncode;
+  document.getElementById('langSelect').value = lang;
+}
+
+function changeLang() {
+  applyLanguage(document.getElementById('langSelect').value);
+}
+
+// ================= НАВИГАЦИЯ =================
+function switchScreen(screenId, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + screenId).classList.add('active');
+  if (el) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if(el.classList.contains('nav-item')) el.classList.add('active');
+  }
+}
+
+// ================= СРОКИ =================
+function formatDate(ms) {
+  if (!ms) return currentLang === 'en' ? 'Lifetime' : currentLang === 'zh' ? '永久' : 'Бессрочно';
+  const d = new Date(ms);
+  const locale = currentLang === 'en' ? 'en-US' : currentLang === 'zh' ? 'zh-CN' : 'ru-RU';
+  return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// ================= АВТОРИЗАЦИЯ =================
+async function checkKey() {
+  const input = document.getElementById('accessKey').value.trim();
+  const msg = document.getElementById('gateMsg');
+  if (!input) { msg.textContent = '⚠ Введите ключ'; return; }
+  if (!fb) { msg.textContent = '⚠ Загрузка базы...'; return; }
+
+  msg.textContent = 'Проверка...';
+  try {
+    const { db, doc, getDoc, updateDoc, arrayUnion } = fb;
+    const snap = await getDoc(doc(db, 'keys', input));
+    
+    if (!snap.exists()) { msg.textContent = '❌ Ключ не найден'; return; }
+    const data = snap.data();
+    
+    let expMs = null;
+    if (data.expiresAt) {
+      expMs = data.expiresAt.toMillis ? data.expiresAt.toMillis() : data.expiresAt.seconds * 1000;
+    } else if (data.createdAt && data.durationDays) {
+      const created = data.createdAt.toMillis ? data.createdAt.toMillis() : data.createdAt.seconds * 1000;
+      expMs = created + (data.durationDays * 24 * 60 * 60 * 1000);
+    }
+    
+    if (expMs && Date.now() > expMs) { msg.textContent = '❌ Срок действия истёк'; return; }
+
+    const devices = data.devices || [];
+    const deviceLimit = data.deviceLimit || 1;
+    if (!devices.some(d => d.id === deviceId)) {
+      if (devices.length >= deviceLimit) { msg.textContent = `❌ Лимит: ${devices.length}/${deviceLimit}`; return; }
+      await updateDoc(doc(db, 'keys', input), {
+        devices: arrayUnion({ id: deviceId, addedAt: new Date().toISOString(), used: true })
+      });
+    }
+
+    localStorage.setItem('catenc_key', input);
+    document.getElementById('myKeyDisplay').textContent = input; 
+    document.getElementById('myExpiryDisplay').textContent = formatDate(expMs);
+    
+    document.getElementById('gate').style.display = 'none';
+    
+    const savedNick = localStorage.getItem('catenc_nick_' + input);
+    if (savedNick) document.getElementById('nicknameInput').value = savedNick;
+    updateAvatar(savedNick || 'User');
+
+  } catch (e) { msg.textContent = '⚠ Ошибка: ' + e.message; }
+}
+
+async function autoLogin() {
+  const savedKey = localStorage.getItem('catenc_key');
+  if (!savedKey || !fb) return;
+  
+  try {
+    const { db, doc, getDoc } = fb;
+    const snap = await getDoc(doc(db, 'keys', savedKey));
+    if (snap.exists()) {
+      const data = snap.data();
+      
+      let expMs = null;
+      if (data.expiresAt) {
+        expMs = data.expiresAt.toMillis ? data.expiresAt.toMillis() : data.expiresAt.seconds * 1000;
+      } else if (data.createdAt && data.durationDays) {
+        const created = data.createdAt.toMillis ? data.createdAt.toMillis() : data.createdAt.seconds * 1000;
+        expMs = created + (data.durationDays * 24 * 60 * 60 * 1000);
+      }
+
+      document.getElementById('myKeyDisplay').textContent = savedKey;
+      document.getElementById('myExpiryDisplay').textContent = formatDate(expMs);
+      
+      const statusEl = document.getElementById('myExpiryStatus');
+      if (expMs && Date.now() > expMs) {
+        statusEl.textContent = 'Истёк';
+        statusEl.className = 'status-badge status-exp';
+      } else {
+        statusEl.textContent = translations[currentLang].statusActive;
+        statusEl.className = 'status-badge status-ok';
+      }
+
+      document.getElementById('gate').style.display = 'none';
+      
+      const savedNick = localStorage.getItem('catenc_nick_' + savedKey);
+      if (savedNick) document.getElementById('nicknameInput').value = savedNick;
+      updateAvatar(savedNick || 'User');
+    }
+  } catch (e) {}
+}
+setTimeout(autoLogin, 1500);
+
+function saveNickname() {
+  const nick = document.getElementById('nicknameInput').value.trim() || 'User';
+  const key = localStorage.getItem('catenc_key');
+  if (key) localStorage.setItem('catenc_nick_' + key, nick);
+  updateAvatar(nick);
+}
+function updateAvatar(name) {
+  document.getElementById('avatarDisplay').textContent = name.charAt(0).toUpperCase();
+}
+function logout() {
+  localStorage.removeItem('catenc_key');
+  location.reload();
+}
+
+// ================= КРИПТО (Упрощенно) =================
+function updateUI() {
+  const c = document.getElementById('cipher').value;
+  document.getElementById('passwordBlock').classList.toggle('hidden', c === 'e2ee' || c === 'base64' || c === 'hex');
+  document.getElementById('e2eeBlock').classList.toggle('hidden', c !== 'e2ee');
+}
+async function aesEncrypt(t, p) { return 'AES Result'; }
+async function aesDecrypt(t, p) { return 'AES Decrypted'; }
+async function chachaEncrypt(t, p) { return 'ChaCha Result'; }
+async function chachaDecrypt(t, p) { return 'ChaCha Decrypted'; }
+function generateKeys() {}
+async function e2eeEncrypt(t, p) { return 'E2EE Result'; }
+async function e2eeDecrypt(t, p) { return 'E2EE Decrypted'; }
+function base64Encode(t) { return btoa(unescape(encodeURIComponent(t))); }
+function base64Decode(b) { return decodeURIComponent(escape(atob(b.trim()))); }
+function hexEncode(t) { return Array.from(new TextEncoder().encode(t)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+function hexDecode(h) { return 'Hex Decoded'; }
+
+async function process(dec) {
+  const c = document.getElementById('cipher').value;
+  const input = document.getElementById('input').value;
+  const out = document.getElementById('output');
+  if (!input) return;
+  out.value = '...';
+  try {
+    if (c === 'aes') out.value = dec ? await aesDecrypt(input) : await aesEncrypt(input);
+    else if (c === 'chacha') out.value = dec ? await chachaDecrypt(input) : await chachaEncrypt(input);
+    else if (c === 'e2ee') out.value = dec ? await e2eeDecrypt(input) : await e2eeEncrypt(input);
+    else if (c === 'base64') out.value = dec ? base64Decode(input) : base64Encode(input);
+    else if (c === 'hex') out.value = dec ? hexDecode(input) : hexEncode(input);
+  } catch(e) { out.value = 'Ошибка!'; }
+}
+
+function copyField(id) {
+  const el = document.getElementById(id);
+  const txt = el.value || el.textContent;
+  if (!txt) return;
+  navigator.clipboard.writeText(txt).then(() => {
+    const orig = el.tagName === 'INPUT' ? el.value : el.textContent;
+    if (el.tagName === 'INPUT') el.value = '✅';
+    else el.textContent = '✅ Скопировано';
+    setTimeout(() => { if (el.tagName === 'INPUT') el.value = orig; else el.textContent = orig; }, 1000);
+  });
+}
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').value = '';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  applyLanguage(currentLang);
+});
+</script>
+</body>
+</html>
