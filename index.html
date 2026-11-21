@@ -145,16 +145,13 @@
   <div class="container">
     <div class="app-title" data-i18n="homeTitle">🐱 Шифрование</div>
     <label for="cipher" data-i18n="lblMethod">Метод</label>
+    <!-- Убрали optgroup, чтобы не глючило на мобилках -->
     <select id="cipher" onchange="updateUI()">
-      <optgroup label="🔐 Шифрование" data-i18n="ogSecure">
-        <option value="aes" data-i18n="optAes">AES-256-GCM</option>
-        <option value="chacha" data-i18n="optChacha">ChaCha20-Poly1305</option>
-        <option value="e2ee" data-i18n="optE2ee">E2EE</option>
-      </optgroup>
-      <optgroup label="📦 Кодирование" data-i18n="ogEncode">
-        <option value="base64" data-i18n="optB64">Base64</option>
-        <option value="hex" data-i18n="optHex">Hex</option>
-      </optgroup>
+      <option value="aes" data-i18n="optAes">🔐 AES-256-GCM</option>
+      <option value="chacha" data-i18n="optChacha">🔐 ChaCha20-Poly1305</option>
+      <option value="e2ee" data-i18n="optE2ee">🔐 E2EE</option>
+      <option value="base64" data-i18n="optB64">📦 Base64</option>
+      <option value="hex" data-i18n="optHex">📦 Hex</option>
     </select>
     <div id="passwordBlock">
       <label for="key" data-i18n="lblPassword">Пароль</label>
@@ -256,21 +253,14 @@
   </div>
 </div>
 
-<!-- Firebase & Libsodium (Загружаем через отдельный файл) -->
 <script src="libsodium-wrappers.min.js"></script>
 
 <script type="module">
-  // ==========================================
-  // ЗАГРУЗКА КОНФИГА FIREBASE ИЗ ФАЙЛА CatBase.firebase
-  // ==========================================
-  
   async function loadFirebaseConfig() {
     try {
-      // Пытаемся прочитать файл
       const response = await fetch('CatBase.firebase');
-      if (!response.ok) throw new Error('Файл CatBase.firebase не найден');
-      const config = await response.json();
-      return config;
+      if (!response.ok) throw new Error('Not found');
+      return await response.json();
     } catch (err) {
       console.error('Ошибка загрузки конфигурации Firebase:', err);
       document.getElementById('gateMsg').textContent = '⚠ Ошибка: Нет файла CatBase.firebase';
@@ -282,7 +272,6 @@
     const firebaseConfig = await loadFirebaseConfig();
     if (!firebaseConfig) return;
 
-    // Импортируем Firebase SDK
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
     const { getFirestore, doc, getDoc, updateDoc, arrayUnion } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
@@ -297,7 +286,6 @@
 </script>
 
 <script>
-// ================= ОСТАЛЬНАЯ ЛОГИКА =================
 let sodium = null, sodiumReady = false, fb = null;
 let html5QrCode = null;
 
@@ -351,8 +339,8 @@ async function closeQR() {
 const translations = {
   ru: {
     gateMsg: "Введите ключ доступа", btnLogin: "🔓 Войти",
-    homeTitle: "🐱 Шифрование", lblMethod: "Метод", ogSecure: "🔐 Шифрование", ogEncode: "📦 Кодирование",
-    optAes: "AES-256-GCM", optChacha: "ChaCha20-Poly1305", optE2ee: "E2EE", optB64: "Base64", optHex: "Hex",
+    homeTitle: "🐱 Шифрование", lblMethod: "Метод",
+    optAes: "🔐 AES-256-GCM", optChacha: "🔐 ChaCha20-Poly1305", optE2ee: "🔐 E2EE", optB64: "📦 Base64", optHex: "📦 Hex",
     lblPassword: "Пароль", phPassword: "Введите пароль...",
     lblKeypair: "Ваша пара ключей", phPub: "Публичный", phPriv: "Приватный", btnGenKeys: "🔑 Сгенерировать",
     lblPeerPub: "Публичный ключ получателя", phPeerPub: "Вставьте публичный ключ...",
@@ -367,8 +355,8 @@ const translations = {
   },
   en: {
     gateMsg: "Enter access key", btnLogin: "🔓 Login",
-    homeTitle: "🐱 Encryption", lblMethod: "Method", ogSecure: "🔐 Encryption", ogEncode: "📦 Encoding",
-    optAes: "AES-256-GCM", optChacha: "ChaCha20-Poly1305", optE2ee: "E2EE", optB64: "Base64", optHex: "Hex",
+    homeTitle: "🐱 Encryption", lblMethod: "Method",
+    optAes: "🔐 AES-256-GCM", optChacha: "🔐 ChaCha20-Poly1305", optE2ee: "🔐 E2EE", optB64: "📦 Base64", optHex: "📦 Hex",
     lblPassword: "Password", phPassword: "Enter password...",
     lblKeypair: "Your key pair", phPub: "Public", phPriv: "Private", btnGenKeys: "🔑 Generate",
     lblPeerPub: "Recipient public key", phPeerPub: "Paste public key...",
@@ -383,8 +371,8 @@ const translations = {
   },
   zh: {
     gateMsg: "请输入访问密钥", btnLogin: "🔓 登录",
-    homeTitle: "🐱 加密", lblMethod: "方法", ogSecure: "🔐 加密", ogEncode: "📦 编码",
-    optAes: "AES-256-GCM", optChacha: "ChaCha20-Poly1305", optE2ee: "E2EE", optB64: "Base64", optHex: "十六进制",
+    homeTitle: "🐱 加密", lblMethod: "方法",
+    optAes: "🔐 AES-256-GCM", optChacha: "🔐 ChaCha20-Poly1305", optE2ee: "🔐 E2EE", optB64: "📦 Base64", optHex: "📦 十六进制",
     lblPassword: "密码", phPassword: "请输入密码...",
     lblKeypair: "您的密钥对", phPub: "公钥", phPriv: "私钥", btnGenKeys: "🔑 生成",
     lblPeerPub: "接收方公钥", phPeerPub: "粘贴公钥...",
@@ -416,8 +404,6 @@ function applyLanguage(lang) {
     if (t[key]) el.placeholder = t[key];
   });
 
-  document.querySelector('optgroup[data-i18n="ogSecure"]').label = t.ogSecure;
-  document.querySelector('optgroup[data-i18n="ogEncode"]').label = t.ogEncode;
   document.getElementById('langSelect').value = lang;
 }
 
@@ -544,23 +530,102 @@ function logout() {
   location.reload();
 }
 
-// ================= КРИПТО (Упрощенно) =================
+// ================= КРИПТО =================
 function updateUI() {
   const c = document.getElementById('cipher').value;
   document.getElementById('passwordBlock').classList.toggle('hidden', c === 'e2ee' || c === 'base64' || c === 'hex');
   document.getElementById('e2eeBlock').classList.toggle('hidden', c !== 'e2ee');
 }
-async function aesEncrypt(t, p) { return 'AES Result'; }
-async function aesDecrypt(t, p) { return 'AES Decrypted'; }
-async function chachaEncrypt(t, p) { return 'ChaCha Result'; }
-async function chachaDecrypt(t, p) { return 'ChaCha Decrypted'; }
-function generateKeys() {}
-async function e2eeEncrypt(t, p) { return 'E2EE Result'; }
-async function e2eeDecrypt(t, p) { return 'E2EE Decrypted'; }
+
+async function deriveKey(password, salt) {
+  const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function aesEncrypt(text, pw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pw, salt);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text));
+  const combined = new Uint8Array(28 + ct.byteLength);
+  combined.set(salt, 0); combined.set(iv, 16); combined.set(new Uint8Array(ct), 28);
+  return btoa(String.fromCharCode(...combined));
+}
+async function aesDecrypt(b64, pw) {
+  try {
+    const c = Uint8Array.from(atob(b64.trim()), ch => ch.charCodeAt(0));
+    if (c.length < 28) throw 0;
+    const salt = c.slice(0,16), iv = c.slice(16,28), ct = c.slice(28);
+    const key = await deriveKey(pw, salt);
+    return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct));
+  } catch (e) { return '⚠ Ошибка AES: неверный пароль'; }
+}
+
+async function chachaEncrypt(text, pw) {
+  if (!sodiumReady) return '⚠ libsodium не готова';
+  const salt = sodium.randombytes_buf(sodium.crypto_pwhash_SALTBYTES);
+  const nonce = sodium.randombytes_buf(sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES);
+  const key = sodium.crypto_pwhash(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES, pw, salt,
+    sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE, sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE, sodium.crypto_pwhash_ALG_ARGON2ID13);
+  const ct = sodium.crypto_aead_chacha20poly1305_ietf_encrypt(new TextEncoder().encode(text), null, null, nonce, key);
+  const c = new Uint8Array(salt.length + nonce.length + ct.length);
+  c.set(salt,0); c.set(nonce, salt.length); c.set(ct, salt.length + nonce.length);
+  return sodium.to_base64(c, sodium.base64_variants.ORIGINAL);
+}
+async function chachaDecrypt(b64, pw) {
+  if (!sodiumReady) return '⚠ libsodium не готова';
+  try {
+    const c = sodium.from_base64(b64.trim(), sodium.base64_variants.ORIGINAL);
+    const sL = sodium.crypto_pwhash_SALTBYTES, nL = sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES;
+    const salt = c.slice(0, sL), nonce = c.slice(sL, sL+nL), ct = c.slice(sL+nL);
+    const key = sodium.crypto_pwhash(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES, pw, salt,
+      sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE, sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE, sodium.crypto_pwhash_ALG_ARGON2ID13);
+    return new TextDecoder().decode(sodium.crypto_aead_chacha20poly1305_ietf_decrypt(null, ct, null, nonce, key));
+  } catch (e) { return '⚠ Ошибка ChaCha: неверный пароль'; }
+}
+
+function generateKeys() {
+  if (!sodiumReady) return;
+  const kp = sodium.crypto_box_keypair();
+  document.getElementById('myPub').value = sodium.to_base64(kp.publicKey, sodium.base64_variants.ORIGINAL);
+  document.getElementById('myPriv').value = sodium.to_base64(kp.privateKey, sodium.base64_variants.ORIGINAL);
+  document.getElementById('myPrivDecrypt').value = sodium.to_base64(kp.privateKey, sodium.base64_variants.ORIGINAL);
+}
+async function e2eeEncrypt(text, peerPub) {
+  if (!sodiumReady) return '⚠ libsodium не готова';
+  const eph = sodium.crypto_box_keypair();
+  const pp = sodium.from_base64(peerPub.trim(), sodium.base64_variants.ORIGINAL);
+  const nonce = sodium.randombytes_buf(sodium.crypto_box_NONCEBYTES);
+  const ct = sodium.crypto_box_easy(new TextEncoder().encode(text), nonce, pp, eph.privateKey);
+  const c = new Uint8Array(eph.publicKey.length + nonce.length + ct.length);
+  c.set(eph.publicKey, 0); c.set(nonce, eph.publicKey.length); c.set(ct, eph.publicKey.length + nonce.length);
+  return sodium.to_base64(c, sodium.base64_variants.ORIGINAL);
+}
+async function e2eeDecrypt(b64, myPriv) {
+  if (!sodiumReady) return '⚠ libsodium не готова';
+  try {
+    const c = sodium.from_base64(b64.trim(), sodium.base64_variants.ORIGINAL);
+    const pL = sodium.crypto_box_PUBLICKEYBYTES, nL = sodium.crypto_box_NONCEBYTES;
+    const ephPub = c.slice(0, pL), nonce = c.slice(pL, pL+nL), ct = c.slice(pL+nL);
+    const mp = sodium.from_base64(myPriv.trim(), sodium.base64_variants.ORIGINAL);
+    return new TextDecoder().decode(sodium.crypto_box_open_easy(ct, nonce, ephPub, mp));
+  } catch (e) { return '⚠ Ошибка E2EE: неверный ключ'; }
+}
+
 function base64Encode(t) { return btoa(unescape(encodeURIComponent(t))); }
-function base64Decode(b) { return decodeURIComponent(escape(atob(b.trim()))); }
+function base64Decode(b) { 
+  try { return decodeURIComponent(escape(atob(b.trim().replace(/\s+/g,'')))); }
+  catch(e) { return '⚠ Ошибка Base64'; }
+}
 function hexEncode(t) { return Array.from(new TextEncoder().encode(t)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-function hexDecode(h) { return 'Hex Decoded'; }
+function hexDecode(h) {
+  try {
+    const c = h.trim().replace(/\s+/g,'').replace(/^0x/i,'');
+    if (c.length % 2 || !/^[0-9a-fA-F]*$/.test(c)) throw 0;
+    const b = new Uint8Array(c.length/2);
+    for (let i=0;i<c.length;i+=2) b[i/2]=parseInt(c.substr(i,2),16);
+    return new TextDecoder().decode(b);
+  } catch(e) { return '⚠ Ошибка Hex'; }
+}
 
 async function process(dec) {
   const c = document.getElementById('cipher').value;
@@ -569,12 +634,23 @@ async function process(dec) {
   if (!input) return;
   out.value = '...';
   try {
-    if (c === 'aes') out.value = dec ? await aesDecrypt(input) : await aesEncrypt(input);
-    else if (c === 'chacha') out.value = dec ? await chachaDecrypt(input) : await chachaEncrypt(input);
-    else if (c === 'e2ee') out.value = dec ? await e2eeDecrypt(input) : await e2eeEncrypt(input);
+    if (c === 'aes') {
+      const pw = document.getElementById('key').value;
+      if(!pw) { out.value='⚠ Введите пароль'; return; }
+      out.value = dec ? await aesDecrypt(input, pw) : await aesEncrypt(input, pw);
+    }
+    else if (c === 'chacha') {
+      const pw = document.getElementById('key').value;
+      if(!pw) { out.value='⚠ Введите пароль'; return; }
+      out.value = dec ? await chachaDecrypt(input, pw) : await chachaEncrypt(input, pw);
+    }
+    else if (c === 'e2ee') {
+      if (dec) out.value = await e2eeDecrypt(input, document.getElementById('myPrivDecrypt').value);
+      else out.value = await e2eeEncrypt(input, document.getElementById('peerPub').value);
+    }
     else if (c === 'base64') out.value = dec ? base64Decode(input) : base64Encode(input);
     else if (c === 'hex') out.value = dec ? hexDecode(input) : hexEncode(input);
-  } catch(e) { out.value = 'Ошибка!'; }
+  } catch(e) { out.value = '⚠ Ошибка'; }
 }
 
 function copyField(id) {
